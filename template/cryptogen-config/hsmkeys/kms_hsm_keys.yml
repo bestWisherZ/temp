@@ -1,0 +1,61 @@
+hsm_keys:
+  - wx-org1.chainmaker.org:
+      ca:
+        - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+      node:
+        consensus:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        common:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+      user:
+        admin:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        client:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        light:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+  - wx-org2.chainmaker.org:
+      ca:
+        - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+      node:
+        consensus:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        common:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+      user:
+        admin:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        client:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        light:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+  - wx-org3.chainmaker.org:
+      ca:
+        - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+      node:
+        consensus:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        common:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+      user:
+        admin:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        client:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        light:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+  - wx-org4.chainmaker.org:
+      ca:
+        - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+      node:
+        consensus:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        common:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+      user:
+        admin:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        client:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,
+        light:
+          - e2920cd5-5a02-11eb-840b-525400e8e6ea,SM2DSA,

@@ -1,0 +1,33 @@
+pk_config:
+#    pk_algo: rsa2048
+    pk_algo: ecc_p256
+#    pk_algo: sm2
+    hash_algo: sha256
+#    hash_algo: sm3
+    #pkcs11配置
+    pkcs11:
+      enabled: false
+      library: /usr/local/lib64/pkcs11/libupkcs11.so
+      label: HSM
+      password: 11111111
+      session_cache_size: 10
+      hash: "SHA256" # hash algorithm used to compute SKI
+    kms:
+      enabled: false            # kms enable flag, set true if use kms
+      is_public: true           # private cloud kms or public cloud kms, set true if use public kms
+      secret_id: ""             # cloud kms SecretId
+      secret_key: ""            # cloud kms SecretKey
+      address: "kms.tencentcloudapi.com" # kms server address, ip or dns
+      region: "ap-beijing"    # kms server region
+      sdk_scheme: "https"       # kms sdk scheme, http or https
+      ext_params: ""            # optional，this is a map string, like "".
+    # Admin配置
+    admin:
+      count: 4
+    # 节点证书配置
+    node:
+      - count: 4
+    user:
+      - type: client
+        # 普通用户证书数量
+        count: 1

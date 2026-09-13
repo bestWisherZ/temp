@@ -1,0 +1,33 @@
+hsm_keys:
+  node1:
+    consensus:
+      - "8b2b9607-691a-11ef-adff-562333b38071,SM2DSA,"
+    user:
+      admin:
+        - "af404797-691a-11ef-8467-52540006abbe,SM2DSA,"
+      client:
+        - "af404797-691a-11ef-8467-52540006abbe,SM2DSA,"
+  node2:
+    consensus:
+      - "908c2109-691a-11ef-b1f0-5254003cca81,SM2DSA,"
+    user:
+      admin:
+        - "dad6f5e2-691a-11ef-a5d2-52540024cbd7,SM2DSA,"
+      client:
+        - "dad6f5e2-691a-11ef-a5d2-52540024cbd7,SM2DSA,"
+  node3:
+    consensus:
+      - "967f0622-691a-11ef-a5d2-52540024cbd7,SM2DSA,"
+    user:
+      admin:
+        - "e1e216d8-691a-11ef-b1f0-5254003cca81,SM2DSA,"
+      client:
+        - "e1e216d8-691a-11ef-b1f0-5254003cca81,SM2DSA,"
+  node4:
+    consensus:
+      - "9dd896ad-691a-11ef-9f67-525400c86b9d,SM2DSA,"
+    user:
+      admin:
+        - "e7c3c3fe-691a-11ef-8467-52540006abbe,SM2DSA,"
+      client:
+        - "e7c3c3fe-691a-11ef-8467-52540006abbe,SM2DSA,"

@@ -1,0 +1,101 @@
+crypto_config:
+    wx-org1.chainmaker.org:
+        ca:
+            ca.crt
+            ca.key
+        user:
+            admin1:
+                admin1.sign.crt
+                admin1.sign.key
+                admin1.tls.crt
+                admin1.tls.key
+            admin2:
+                admin2.sign.crt
+                admin2.sign.key
+                admin2.tls.crt
+                admin2.tls.key
+            client1:
+                client1.sign.crt
+                client1.sign.key
+                client1.tls.crt
+                client1.tls.key
+            client2:
+                client2.sign.crt
+                client2.sign.key
+                client2.tls.crt
+                client2.tls.key
+        node:
+            consensus1:
+                consensus1.sign.crt
+                consensus1.sign.key
+                consensus1.tls.crt
+                consensus1.tls.key
+                consensus1.nodeid       # tls.crt生成
+            consensus2:
+                consensus2.sign.crt
+                consensus2.sign.key
+                consensus2.tls.crt
+                consensus2.tls.key
+                consensus2.nodeid       # tls.crt生成
+            common1:
+                common1.sign.crt
+                common1.sign.key
+                common1.tls.crt
+                common1.tls.key
+                common1.nodeid          # tls.crt生成
+            common2:
+                common2.sign.crt
+                common2.sign.key
+                common2.tls.crt
+                common2.tls.key
+                common2.nodeid          # tls.crt生成
+    wx-org2.chainmaker.org:
+        ca:
+            ca.crt
+            ca.key
+        user:
+            admin1:
+                admin1.sign.crt
+                admin1.sign.key
+                admin1.tls.crt
+                admin1.tls.key
+            admin2:
+                admin2.sign.crt
+                admin2.sign.key
+                admin2.tls.crt
+                admin2.tls.key
+            client1:
+                client1.sign.crt
+                client1.sign.key
+                client1.tls.crt
+                client1.tls.key
+            client2:
+                client2.sign.crt
+                client2.sign.key
+                client2.tls.crt
+                client2.tls.key
+        node:
+            consensus1:
+                consensus1.sign.crt
+                consensus1.sign.key
+                consensus1.tls.crt
+                consensus1.tls.key
+                consensus1.nodeid       # tls.crt生成
+            consensus2:
+                consensus2.sign.crt
+                consensus2.sign.key
+                consensus2.tls.crt
+                consensus2.tls.key
+                consensus2.nodeid       # tls.crt生成
+            common1:
+                common1.sign.crt
+                common1.sign.key
+                common1.tls.crt
+                common1.tls.key
+                common1.nodeid          # tls.crt生成
+            common2:
+                common2.sign.crt
+                common2.sign.key
+                common2.tls.crt
+                common2.tls.key
+                common2.nodeid          # tls.crt生成

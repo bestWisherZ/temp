@@ -1,0 +1,65 @@
+hsm_keys:
+  - wx-org1.chainmaker.org:
+      ca:
+        - 1,123456
+      node:
+        consensus:
+          - 2,123456
+          - 3,123456
+        common:
+          - 3,123456
+      user:
+        admin:
+          - 4,123456
+        client:
+          - 5,123456
+        light:
+          - 6,123456
+  - wx-org2.chainmaker.org:
+      ca:
+        - 7,123456
+      node:
+        consensus:
+          - 8,123456
+          - 9,123456
+        common:
+          - 9,123456
+      user:
+        admin:
+          - 10,123456
+        client:
+          - 11,123456
+        light:
+          - 12,123456
+  - wx-org3.chainmaker.org:
+      ca:
+        - 13,123456
+      node:
+        consensus:
+          - 14,1234561
+          - 15,1234562
+        common:
+          - 15,123456
+      user:
+        admin:
+          - 16,123456
+        client:
+          - 17,123456
+        light:
+          - 18,123456
+  - wx-org4.chainmaker.org:
+      ca:
+        - 19,123456
+      node:
+        consensus:
+          - 20,123456
+          - 21,123456
+        common:
+          - 21,123456
+      user:
+        admin:
+          - 22,123456
+        client:
+          - 23,123456
+        light:
+          - 24,123456

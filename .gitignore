@@ -1,0 +1,9 @@
+/artifacts/
+/runtime/
+/results/
+/bench/out/
+/bench/workload/
+__pycache__/
+*.pyc
+*.key
+*.pem

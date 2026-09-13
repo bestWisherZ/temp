@@ -1,0 +1,19 @@
+{
+  "root": "/root/du_sharding",
+  "run_id": "s2-20260914-01",
+  "business_shards": 2,
+  "intra_consensus_rounds": 5,
+  "inter_consensus_rounds": 8,
+  "schedule_start_height": 10,
+  "tx_count": 10000,
+  "tx_rate": 500,
+  "connections": 128,
+  "cross_ratio": 0.05,
+  "workload_contract": "standard_dfa_experiment",
+  "confirm_wait_seconds": 300,
+  "vm_image": "chainmakerofficial/chainmaker-vm-engine:v2.4.0",
+  "vm_cpus": 16,
+  "vm_memory": "16g",
+  "node_gomaxprocs": 16,
+  "notes": "First validation run, not a saturation throughput result. Server numbers refer to the supplied IP list, not hostnames."
+}
