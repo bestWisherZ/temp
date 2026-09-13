@@ -68,7 +68,7 @@ def remote(cfg, server, argv, timeout=180, source=None, destination=None):
     master, slave = pty.openpty()
     def controlling_terminal():
         os.setsid()
-        fcntl.ioctl(slave, termios.TIOCSCTTY, 0)
+        fcntl.ioctl(0, termios.TIOCSCTTY, 0)
     proc = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave, close_fds=True, preexec_fn=controlling_terminal)
     os.close(slave)
     output = bytearray()
