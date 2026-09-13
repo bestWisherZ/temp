@@ -173,7 +173,7 @@ def generate(cfg):
         cm["net"]["seeds"] = seeds
         cm["net"]["listen_addr"] = "/ip4/0.0.0.0/tcp/%d" % row["p2p"]
         cm["rpc"]["port"] = row["rpc"]
-        cm["tx_pool"]["max_txpool_size"] = cfg.get("max_txpool_size", 50000)
+        cm["txpool"]["max_txpool_size"] = cfg.get("max_txpool_size", 50000)
         (source / "chainmaker.yml").write_text(yaml.safe_dump(cm, default_flow_style=False, allow_unicode=True))
         sh = yaml.safe_load((source / "sharding.yml").read_text())
         sh["sync_network"]["port"] = row["sync"]
