@@ -328,6 +328,8 @@ func main() {
 		err = runSnapshot(os.Args[2:])
 	case "csv":
 		err = runCSV(os.Args[2:])
+	case "audit":
+		err = runAudit(os.Args[2:])
 	case "help", "-h", "--help":
 		usage()
 	default:

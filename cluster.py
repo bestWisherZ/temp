@@ -292,7 +292,7 @@ def benchmark(cfg):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["generate", "deploy", "start", "local-start", "local-metrics", "collect", "prepare", "run"])
+    parser.add_argument("action", choices=["generate", "deploy", "start", "local-start", "local-metrics", "collect", "prepare", "run", "audit"])
     parser.add_argument("--config", default=str(REPO / "config.json"))
     parser.add_argument("--server", type=int, default=0)
     parser.add_argument("--password-stdin", action="store_true")
@@ -321,6 +321,8 @@ def main():
         subprocess.check_call(["bash", str(REPO / "scripts/portable_exec.sh"), str(REPO / "artifacts/bin/shard-worker"), "prepare", "-config", str(run_root(cfg) / "bench.json"), "-server", "sender", "-out-dir", str(run_root(cfg) / "out/prepare")], cwd=str(REPO / "bench"))
     elif args.action == "run":
         benchmark(cfg)
+    elif args.action == "audit":
+        subprocess.check_call(["bash", str(REPO / "scripts/portable_exec.sh"), str(REPO / "artifacts/bin/shard-worker"), "audit", "-config", str(run_root(cfg) / "bench.json"), "-server", "sender"], cwd=str(REPO / "bench"))
 
 
 if __name__ == "__main__":
