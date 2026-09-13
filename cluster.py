@@ -237,7 +237,7 @@ def local_start(cfg, server):
                    PROCESS_PRELOAD_DISABLE="false", PROCESS_PRELOAD_NUM_BY_USE_FREQUENCY="10",
                    PROCESS_PRELOAD_NUM_BY_LAST_TIME="10", DOCKERVM_CONTRACT_ENGINE_LOG_LEVEL="INFO",
                    DOCKERVM_SANDBOX_LOG_LEVEL="INFO", DOCKERVM_LOG_IN_CONSOLE="false")
-        command = ["docker", "run", "-d", "--name", name, "--label", "du_sharding.run=" + cfg["run_id"],
+        command = ["docker", "run", "-d", "--privileged", "--name", name, "--label", "du_sharding.run=" + cfg["run_id"],
                    "--network", "host", "--cpus", str(cfg["vm_cpus"]), "--memory", cfg["vm_memory"],
                    "--pids-limit", "4096", "--log-opt", "max-size=10m", "--log-opt", "max-file=2",
                    "-v", str(vmdata) + ":/mount", "-v", str(vmlog) + ":/log"]
@@ -286,6 +286,29 @@ def local_stop(cfg, server):
         print("stopped own node:", row["key"], row["org"], flush=True)
 
 
+def repair_vm(cfg, server):
+    for row in [r for r in hosts(cfg) if r["server"] == server]:
+        name = "du-%s-%s-org%d" % (cfg["run_id"], row["key"], row["org"])
+        info = json.loads(subprocess.check_output(["docker", "inspect", name]).decode())[0]
+        if info["Config"].get("Labels", {}).get("du_sharding.run") != cfg["run_id"]:
+            raise RuntimeError("container ownership mismatch")
+        if info["HostConfig"]["Privileged"]:
+            print("VM already configured:", name)
+            continue
+        subprocess.check_call(["docker", "stop", "--time", "10", name])
+        subprocess.check_call(["docker", "rename", name, name + "-unprivileged"])
+        args = ["docker", "run", "-d", "--privileged", "--name", name,
+                "--label", "du_sharding.run=" + cfg["run_id"], "--network", "host",
+                "--ipc", "private", "--cpus", str(cfg["vm_cpus"]), "--memory", cfg["vm_memory"],
+                "--pids-limit", "4096", "--log-opt", "max-size=10m", "--log-opt", "max-file=2"]
+        for mount in info["Mounts"]:
+            checked_path(mount["Source"])
+            args += ["-v", mount["Source"] + ":" + mount["Destination"]]
+        for env in info["Config"]["Env"]:
+            args += ["-e", env]
+        subprocess.check_call(args + [cfg["vm_image"]])
+
+
 def local_metrics(cfg, server):
     for row in [r for r in hosts(cfg) if r["server"] == server and r["org"] == 1]:
         base = node_path(cfg, row)
@@ -324,7 +347,7 @@ def benchmark(cfg):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["generate", "deploy", "start", "stop", "local-start", "local-stop", "local-metrics", "collect", "prepare", "run", "audit"])
+    parser.add_argument("action", choices=["generate", "deploy", "start", "stop", "local-start", "local-stop", "local-metrics", "collect", "prepare", "run", "audit", "repair-vm", "local-repair-vm"])
     parser.add_argument("--config", default=str(REPO / "config.json"))
     parser.add_argument("--server", type=int, default=0)
     parser.add_argument("--password-stdin", action="store_true")
@@ -334,7 +357,7 @@ def main():
         raise ValueError("experiment root must be /root/du_sharding")
     if cfg["business_shards"] not in [2, 4, 8, 16, 32]:
         raise ValueError("unsupported shard count")
-    if args.action in ["deploy", "start", "stop", "collect", "run"] and not os.environ.get("DU_SSH_PASSWORD"):
+    if args.action in ["deploy", "start", "stop", "collect", "run", "repair-vm"] and not os.environ.get("DU_SSH_PASSWORD"):
         os.environ["DU_SSH_PASSWORD"] = sys.stdin.readline().rstrip("\n") if args.password_stdin else getpass.getpass("Cluster SSH password: ")
     if args.action == "generate":
         generate(cfg)
@@ -350,6 +373,12 @@ def main():
             print(remote(cfg, server, ["python3", str(REPO / "cluster.py"), "local-stop", "--server", str(server), "--config", str(run_root(cfg) / "config.used.json")]), flush=True)
     elif args.action == "local-stop":
         local_stop(cfg, args.server)
+    elif args.action == "repair-vm":
+        for server in sorted({r["server"] for r in hosts(cfg)}):
+            remote(cfg, server, ["git", "-C", str(REPO), "pull", "--ff-only"])
+            print(remote(cfg, server, ["python3", str(REPO / "cluster.py"), "local-repair-vm", "--server", str(server), "--config", str(run_root(cfg) / "config.used.json")]), flush=True)
+    elif args.action == "local-repair-vm":
+        repair_vm(cfg, args.server)
     elif args.action == "local-metrics":
         local_metrics(cfg, args.server)
     elif args.action == "collect":

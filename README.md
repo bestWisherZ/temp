@@ -31,6 +31,11 @@ image is the official `chainmakerofficial/chainmaker-vm-engine:v2.4.0`, not the
 preinstalled v3.0.1. `fetch_vm_image.py` supports verified offline image transfer
 when Docker Hub cannot be reached from the servers.
 
+The v2.4.0 VM requires `--privileged` for its security initialization, as in the
+upstream start script. It keeps a private IPC and PID namespace; do not add
+`--ipc=host` or `--pid=host`. Its only host mounts are this experiment's data
+and log directories. CPU and memory limits apply to this experiment's VM.
+
 `artifacts.tar.gz` is transferred separately to server1 as
 `/root/du_sharding/artifacts.tar.gz` and extracted into this repository. It
 contains the node, cryptogen and benchmark binaries, plus a private Linux
