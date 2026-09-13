@@ -246,12 +246,26 @@ def local_start(cfg, server):
         subprocess.check_call(command + [cfg["vm_image"]])
         runtime_env = dict(os.environ, GOMAXPROCS=str(cfg["node_gomaxprocs"]),
                            PATH=str(dest / "lib") + ":" + os.environ["PATH"])
+        system_log = dest / "log" / "system.log"
+        system_offset = system_log.stat().st_size if system_log.exists() else 0
         with (dest / "log" / "console.log").open("ab") as log:
             process = subprocess.Popen(["bash", str(REPO / "scripts/portable_exec.sh"),
                 str(dest / "bin/chainmaker"), "start", "-c", str(dest / "config" / org / "chainmaker.yml")],
                 cwd=str(dest / "bin"), env=runtime_env, stdin=subprocess.DEVNULL,
                 stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         pidpath.write_text(str(process.pid) + "\n")
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise RuntimeError("node exited during startup; inspect " + str(dest / "log/console.log"))
+            if system_log.exists():
+                with system_log.open(errors="replace") as log:
+                    log.seek(system_offset)
+                    if any("start blockchain[" in line and "success" in line for line in log):
+                        break
+            time.sleep(0.5)
+        else:
+            raise RuntimeError("blockchain startup incomplete; inspect node/VM logs before preparing")
         print("started", row["key"], org, process.pid, flush=True)
 
 
