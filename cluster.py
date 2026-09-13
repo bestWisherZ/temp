@@ -370,10 +370,39 @@ def collect(cfg):
         print("metrics:", row["key"], "bytes", dest.stat().st_size, flush=True)
 
 
+def require_run_config(cfg):
+    saved = json.loads((run_root(cfg) / "config.used.json").read_text())
+    if saved != cfg:
+        raise ValueError("config changed after generation; choose a fresh run_id and generate a new run")
+
+
+def generate_dataset(cfg):
+    require_run_config(cfg)
+    root = run_root(cfg)
+    config = str(root / "bench.json")
+    dataset = root / "out/workload/transactions_all.jsonl"
+    if dataset.exists():
+        used = json.loads((dataset.parent / "config.used.json").read_text())
+        expected = json.loads(Path(config).read_text())
+        if any(used.get(key) != value for key, value in expected.items()):
+            raise ValueError("existing dataset config differs from this run; refusing to overwrite")
+        summary = json.loads((dataset.parent / "summary.json").read_text())
+        with dataset.open() as rows:
+            count = sum(1 for _ in rows)
+        if count != cfg["tx_count"] or summary["total"] != count:
+            raise ValueError("incomplete dataset; inspect it and use a fresh run_id")
+        print("reuse dataset:", dataset, "transactions:", count, flush=True)
+        return
+    run_logged(["python3", str(REPO / "bench/tools/generate_workload.py"), "--config", config],
+               REPO, root / "out/generate_workload.log")
+
+
 def benchmark(cfg):
     root = run_root(cfg)
     config = str(root / "bench.json")
-    subprocess.check_call(["python3", str(REPO / "bench/tools/generate_workload.py"), "--config", config])
+    if (root / "out/run.log").exists() or (root / "out/result.json").exists():
+        raise ValueError("this run already has measurements; choose a fresh run_id, results are never overwritten")
+    generate_dataset(cfg)
     run_logged(["bash", str(REPO / "scripts/portable_exec.sh"), str(REPO / "artifacts/bin/shard-worker"),
                            "run", "-config", config, "-server", "sender", "-dataset",
                            str(root / "out/workload/transactions_all.jsonl"), "-out-dir", str(root / "out")], REPO / "bench", root / "out/run.log")
@@ -381,7 +410,7 @@ def benchmark(cfg):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["generate", "deploy", "start", "stop", "local-start", "local-stop", "local-metrics", "collect", "prepare", "run", "audit", "repair-vm", "local-repair-vm"])
+    parser.add_argument("action", choices=["generate", "deploy", "start", "stop", "local-start", "local-stop", "local-metrics", "collect", "prepare", "dataset", "run", "audit", "repair-vm", "local-repair-vm"])
     parser.add_argument("--config", default=str(REPO / "config.json"))
     parser.add_argument("--server", type=int, default=0)
     parser.add_argument("--password-stdin", action="store_true")
@@ -398,8 +427,21 @@ def main():
     elif args.action == "deploy":
         deploy(cfg)
     elif args.action == "start":
-        for server in sorted({r["server"] for r in hosts(cfg)}):
-            print(remote(cfg, server, ["python3", str(REPO / "cluster.py"), "local-start", "--server", str(server), "--config", str(run_root(cfg) / "config.used.json")]), flush=True)
+        servers = sorted({r["server"] for r in hosts(cfg)})
+        # Separate processes keep PTY setup out of multithreaded pre-exec hooks.
+        # Start peers together so early nodes do not rotate rounds before peers start.
+        with concurrent.futures.ProcessPoolExecutor(max_workers=len(servers)) as pool:
+            futures = {pool.submit(remote, cfg, server, ["python3", str(REPO / "cluster.py"),
+                       "local-start", "--server", str(server), "--config",
+                       str(run_root(cfg) / "config.used.json")]): server for server in servers}
+            errors = []
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    print(future.result(), flush=True)
+                except Exception as error:
+                    errors.append("server%d: %s" % (futures[future], error))
+            if errors:
+                raise RuntimeError("startup failed; inspect own nodes before retrying: " + "; ".join(errors))
     elif args.action == "local-start":
         local_start(cfg, args.server)
     elif args.action == "stop":
@@ -418,7 +460,10 @@ def main():
     elif args.action == "collect":
         collect(cfg)
     elif args.action == "prepare":
+        require_run_config(cfg)
         run_logged(["bash", str(REPO / "scripts/portable_exec.sh"), str(REPO / "artifacts/bin/shard-worker"), "prepare", "-config", str(run_root(cfg) / "bench.json"), "-server", "sender", "-out-dir", str(run_root(cfg) / "out/prepare")], REPO / "bench", run_root(cfg) / "out/prepare.log")
+    elif args.action == "dataset":
+        generate_dataset(cfg)
     elif args.action == "run":
         benchmark(cfg)
     elif args.action == "audit":

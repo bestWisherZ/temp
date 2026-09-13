@@ -4,6 +4,14 @@ This repository contains the experiment controller and benchmark harness. It
 does not replace the sharding system source repository. The first node binary
 was built from `bestWisherZ/chainmaker-go-v2.4.0_alpha` commit `a5935a2`.
 
+Every server also keeps the complete system Git repository, including its
+source files and history, at `/root/du_sharding/chainmaker-go-v2.4.0_alpha`.
+Its origin is `git@github.com:bestWisherZ/chainmaker-go-v2.4.0_alpha.git`.
+System source changes belong there, not in this experiment-tool repository.
+The node executable remains in `temp/artifacts/bin/chainmaker`; pulling source
+alone does not rebuild that executable. Keep its build revision consistent
+with the source revision recorded for an experiment.
+
 All generated files live under `/root/du_sharding`. No controller command
 cleans that directory or stops unrelated services. Generated certificates,
 private keys, server passwords, runtime data, and binary dependency archives
@@ -46,7 +54,7 @@ no server system library is upgraded or overwritten. The VM archive lives at
 ## Commands on Server1
 
 Edit only `config.json` before generating a new run. The current configuration
-is 500,000 transactions at 5,000 tx/s, with 5% cross-shard traffic,
+is 100,000 transactions at 5,000 tx/s, with 5% cross-shard traffic,
 5 business consensus blocks and 8 bridge consensus blocks per cycle. A prior
 10,000-transaction validation at 500 tx/s passed execution and balance checks.
 The per-node transaction pool is set to 500,000 to avoid a small queue limit
@@ -57,11 +65,23 @@ cd /root/du_sharding/temp
 python3 cluster.py generate
 python3 cluster.py deploy
 python3 cluster.py start
-python3 cluster.py prepare
-python3 cluster.py run
+cd scripts
+./prepare_contracts.sh
+./generate_workload.sh
+./run_perf.sh
+cd ..
 python3 cluster.py audit
 python3 cluster.py stop
 ```
+
+These three shell entry points preserve the familiar prepare / dataset / run
+workflow. All read the same repository-root `config.json`; they do not have
+independent configurations. Generated `config.used.json` and `bench.json` are
+run snapshots, not additional settings to edit. Configuration changes after
+`generate` are rejected. The run entry point generates a dataset if missing
+and validates/reuses an existing one. It never overwrites an existing run log
+or result file. Node startup is concurrent across hosts and waits for all
+blockchain modules to start before preparation.
 
 Commands requiring SSH prompt for the password; it is not stored in a file.
 Internal SSH uses the supplied private IPs. Only generated node packages are
@@ -92,8 +112,14 @@ After confirmations, the harness collects compact timing logs from the org1
 replica of every shard and generates the usual outputs in
 `/root/du_sharding/runs/<run_id>/out/`: `result.json`, `transactions.csv`,
 `blocks.csv`, `phase_sync.csv`, and per-shard CSVs in `shards/`.
+The same directory retains `prepare.log`, `generate_workload.log`, `run.log`,
+and `audit.json`. Node data and complete node/VM logs remain on their assigned
+hosts under `runs/<run_id>/build/release/`; stopping nodes does not remove them.
 
-Commit intervals use a single replica per shard. Cross-host timestamps still
+`block_interval_seconds` uses adjacent commit times on the org1 replica of each
+shard. `block_time_seconds` uses the existing proposal timing metadata plus
+the observing replica's commit time; it is not the adjacent commit interval.
+Cross-host timestamps still
 require synchronized clocks. Confirmation means transaction inclusion; inspect
 execution results separately before treating a run as successful throughput.
 The first low-rate validation is not a saturation benchmark.

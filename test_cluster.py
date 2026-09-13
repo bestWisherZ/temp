@@ -1,5 +1,8 @@
 import unittest
+import json
+import tempfile
 from pathlib import Path
+from unittest import mock
 
 import cluster
 
@@ -24,6 +27,25 @@ class LayoutTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 cluster.checked_path(path)
         self.assertEqual(cluster.checked_path("/root/du_sharding/runs/a"), Path("/root/du_sharding/runs/a"))
+
+    def test_frozen_run_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "config.used.json").write_text(json.dumps({"tx_count": 100000}))
+            with mock.patch.object(cluster, "run_root", return_value=root):
+                cluster.require_run_config({"tx_count": 100000})
+                with self.assertRaises(ValueError):
+                    cluster.require_run_config({"tx_count": 500000})
+
+    def test_preserve_run_results(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "out").mkdir()
+            (root / "out/run.log").write_text("existing measurement\n")
+            with mock.patch.object(cluster, "run_root", return_value=root):
+                with self.assertRaises(ValueError):
+                    cluster.benchmark({})
+            self.assertEqual((root / "out/run.log").read_text(), "existing measurement\n")
 
 
 if __name__ == "__main__":

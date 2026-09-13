@@ -1,11 +1,11 @@
 {
   "root": "/root/du_sharding",
-  "run_id": "s2-20260914-02",
+  "run_id": "s2-20260914-03",
   "business_shards": 2,
   "intra_consensus_rounds": 5,
   "inter_consensus_rounds": 8,
   "schedule_start_height": 10,
-  "tx_count": 500000,
+  "tx_count": 100000,
   "tx_rate": 5000,
   "connections": 512,
   "max_txpool_size": 500000,
@@ -16,5 +16,5 @@
   "vm_cpus": 16,
   "vm_memory": "16g",
   "node_gomaxprocs": 16,
-  "notes": "Two-shard measurement after successful 10000-transaction validation. Server numbers refer to the supplied IP list, not hostnames."
+  "notes": "Fresh 100000-transaction run requested by the user. Preserve earlier runs. Server numbers refer to the supplied IP list, not hostnames."
 }
