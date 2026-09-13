@@ -14,6 +14,7 @@ import select
 import shlex
 import shutil
 import socket
+import signal
 import subprocess
 import sys
 import tarfile
@@ -254,6 +255,37 @@ def local_start(cfg, server):
         print("started", row["key"], org, process.pid, flush=True)
 
 
+def local_stop(cfg, server):
+    for row in [r for r in hosts(cfg) if r["server"] == server]:
+        dest = node_path(cfg, row)
+        pidpath = dest / "node.pid"
+        if pidpath.exists():
+            pid = int(pidpath.read_text().strip())
+            proc = Path("/proc") / str(pid)
+            if proc.exists():
+                cmd = (proc / "cmdline").read_bytes()
+                if os.readlink(str(proc / "cwd")) != str(dest / "bin") or str(dest / "bin/chainmaker").encode() not in cmd:
+                    raise RuntimeError("refusing to signal PID belonging to another process")
+                os.kill(pid, signal.SIGTERM)
+                deadline = time.monotonic() + 30
+                while proc.exists() and time.monotonic() < deadline:
+                    if (proc / "stat").read_text().split()[2] == "Z":
+                        break
+                    time.sleep(0.2)
+                else:
+                    if proc.exists():
+                        raise RuntimeError("node did not stop, no forced kill issued")
+            pidpath.rename(dest / "node.pid.stopped")
+        name = "du-%s-%s-org%d" % (cfg["run_id"], row["key"], row["org"])
+        check = subprocess.run(["docker", "inspect", "--format", '{{ index .Config.Labels "du_sharding.run" }}', name],
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        if check.returncode == 0:
+            if check.stdout.strip() != cfg["run_id"]:
+                raise RuntimeError("container ownership label mismatch")
+            subprocess.check_call(["docker", "stop", "--time", "20", name])
+        print("stopped own node:", row["key"], row["org"], flush=True)
+
+
 def local_metrics(cfg, server):
     for row in [r for r in hosts(cfg) if r["server"] == server and r["org"] == 1]:
         base = node_path(cfg, row)
@@ -292,7 +324,7 @@ def benchmark(cfg):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["generate", "deploy", "start", "local-start", "local-metrics", "collect", "prepare", "run", "audit"])
+    parser.add_argument("action", choices=["generate", "deploy", "start", "stop", "local-start", "local-stop", "local-metrics", "collect", "prepare", "run", "audit"])
     parser.add_argument("--config", default=str(REPO / "config.json"))
     parser.add_argument("--server", type=int, default=0)
     parser.add_argument("--password-stdin", action="store_true")
@@ -302,7 +334,7 @@ def main():
         raise ValueError("experiment root must be /root/du_sharding")
     if cfg["business_shards"] not in [2, 4, 8, 16, 32]:
         raise ValueError("unsupported shard count")
-    if args.action in ["deploy", "start", "collect", "run"] and not os.environ.get("DU_SSH_PASSWORD"):
+    if args.action in ["deploy", "start", "stop", "collect", "run"] and not os.environ.get("DU_SSH_PASSWORD"):
         os.environ["DU_SSH_PASSWORD"] = sys.stdin.readline().rstrip("\n") if args.password_stdin else getpass.getpass("Cluster SSH password: ")
     if args.action == "generate":
         generate(cfg)
@@ -313,6 +345,11 @@ def main():
             print(remote(cfg, server, ["python3", str(REPO / "cluster.py"), "local-start", "--server", str(server), "--config", str(run_root(cfg) / "config.used.json")]), flush=True)
     elif args.action == "local-start":
         local_start(cfg, args.server)
+    elif args.action == "stop":
+        for server in sorted({r["server"] for r in hosts(cfg)}):
+            print(remote(cfg, server, ["python3", str(REPO / "cluster.py"), "local-stop", "--server", str(server), "--config", str(run_root(cfg) / "config.used.json")]), flush=True)
+    elif args.action == "local-stop":
+        local_stop(cfg, args.server)
     elif args.action == "local-metrics":
         local_metrics(cfg, args.server)
     elif args.action == "collect":

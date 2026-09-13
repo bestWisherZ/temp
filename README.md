@@ -51,6 +51,8 @@ python3 cluster.py deploy
 python3 cluster.py start
 python3 cluster.py prepare
 python3 cluster.py run
+python3 cluster.py audit
+python3 cluster.py stop
 ```
 
 Commands requiring SSH prompt for the password; it is not stored in a file.
@@ -58,9 +60,13 @@ Internal SSH uses the supplied private IPs. Only generated node packages are
 copied to node hosts, not all organizations' client/admin private keys.
 
 `generate` refuses to overwrite an existing run. For a new clean experiment,
-choose another `run_id`; stop and inspect the previous experiment's own nodes
+choose another `run_id`; use `stop` to stop and inspect the previous experiment's own nodes
 before reusing its ports. Do not run broad `pkill`, Docker prune, or cleanup
 commands on these shared machines.
+
+`stop` checks each recorded PID's working directory and command line before
+sending SIGTERM, and checks the experiment ownership label before stopping its
+VM container. It does not delete node data, logs, or stopped containers.
 
 ## Workload and Results
 
