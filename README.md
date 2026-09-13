@@ -45,9 +45,12 @@ no server system library is upgraded or overwritten. The VM archive lives at
 
 ## Commands on Server1
 
-Edit only `config.json` before generating a new run. The initial configuration
-is a 10,000-transaction validation run at 500 tx/s, with 5% cross-shard traffic,
-5 business consensus blocks and 8 bridge consensus blocks per cycle.
+Edit only `config.json` before generating a new run. The current configuration
+is 500,000 transactions at 5,000 tx/s, with 5% cross-shard traffic,
+5 business consensus blocks and 8 bridge consensus blocks per cycle. A prior
+10,000-transaction validation at 500 tx/s passed execution and balance checks.
+The per-node transaction pool is set to 500,000 to avoid a small queue limit
+dominating this burst experiment; this is not a sustained-load capacity claim.
 
 ```bash
 cd /root/du_sharding/temp

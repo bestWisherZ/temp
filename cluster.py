@@ -32,6 +32,20 @@ def dump(path, data):
     path.write_text(json.dumps(data, indent=2) + "\n")
 
 
+def run_logged(argv, cwd, path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w") as log:
+        process = subprocess.Popen(argv, cwd=str(cwd), stdin=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        for line in process.stdout:
+            log.write(line)
+            log.flush()
+            print(line, end="", flush=True)
+        code = process.wait()
+        if code:
+            raise subprocess.CalledProcessError(code, argv)
+
+
 def checked_path(path):
     path = Path(path).resolve()
     if ROOT not in path.parents:
@@ -159,6 +173,7 @@ def generate(cfg):
         cm["net"]["seeds"] = seeds
         cm["net"]["listen_addr"] = "/ip4/0.0.0.0/tcp/%d" % row["p2p"]
         cm["rpc"]["port"] = row["rpc"]
+        cm["tx_pool"]["max_txpool_size"] = cfg.get("max_txpool_size", 50000)
         (source / "chainmaker.yml").write_text(yaml.safe_dump(cm, default_flow_style=False, allow_unicode=True))
         sh = yaml.safe_load((source / "sharding.yml").read_text())
         sh["sync_network"]["port"] = row["sync"]
@@ -198,10 +213,15 @@ def deploy(cfg):
     for server in sorted({r["server"] for r in hosts(cfg)}):
         remote(cfg, server, ["mkdir", "-p", str(ROOT)])
         remote(cfg, server, ["python3", "-c", "import os,subprocess; p='/root/du_sharding/temp'; subprocess.check_call(['git','-C',p,'pull','--ff-only'] if os.path.isdir(p+'/.git') else ['git','clone','git@github.com:bestWisherZ/temp.git',p])"])
-        remote(cfg, server, None, source=ROOT / "artifacts.tar.gz", destination=ROOT / "artifacts.tar.gz", timeout=300)
-        remote(cfg, server, ["tar", "xzf", str(ROOT / "artifacts.tar.gz"), "-C", str(REPO)])
-        remote(cfg, server, None, source=ROOT / "vm-engine-v2.4.0.tar.gz", destination=ROOT / "vm-engine-v2.4.0.tar.gz", timeout=600)
-        remote(cfg, server, ["docker", "load", "-i", str(ROOT / "vm-engine-v2.4.0.tar.gz")], timeout=300)
+        digest = hashlib.sha256((REPO / "artifacts/bin/chainmaker").read_bytes()).hexdigest()
+        installed = remote(cfg, server, ["python3", "-c", "import pathlib,hashlib;p=pathlib.Path('/root/du_sharding/temp/artifacts/bin/chainmaker');print(hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else 'missing')"])
+        if digest not in installed:
+            remote(cfg, server, None, source=ROOT / "artifacts.tar.gz", destination=ROOT / "artifacts.tar.gz", timeout=300)
+            remote(cfg, server, ["tar", "xzf", str(ROOT / "artifacts.tar.gz"), "-C", str(REPO)])
+        images = remote(cfg, server, ["docker", "images", "--no-trunc", "--format", "{{.ID}}", cfg["vm_image"]])
+        if "sha256:62113b21b57755c6c1c6713493d512ed8bb7bf3d5dd4bbc1b634d7f4ea8a63b8" not in images:
+            remote(cfg, server, None, source=ROOT / "vm-engine-v2.4.0.tar.gz", destination=ROOT / "vm-engine-v2.4.0.tar.gz", timeout=600)
+            remote(cfg, server, ["docker", "load", "-i", str(ROOT / "vm-engine-v2.4.0.tar.gz")], timeout=300)
         archive = root / ("server%d.tar.gz" % server)
         with tarfile.open(str(archive), "w:gz") as tf:
             for row in [r for r in hosts(cfg) if r["server"] == server]:
@@ -354,9 +374,9 @@ def benchmark(cfg):
     root = run_root(cfg)
     config = str(root / "bench.json")
     subprocess.check_call(["python3", str(REPO / "bench/tools/generate_workload.py"), "--config", config])
-    subprocess.check_call(["bash", str(REPO / "scripts/portable_exec.sh"), str(REPO / "artifacts/bin/shard-worker"),
+    run_logged(["bash", str(REPO / "scripts/portable_exec.sh"), str(REPO / "artifacts/bin/shard-worker"),
                            "run", "-config", config, "-server", "sender", "-dataset",
-                           str(root / "out/workload/transactions_all.jsonl"), "-out-dir", str(root / "out")], cwd=str(REPO / "bench"))
+                           str(root / "out/workload/transactions_all.jsonl"), "-out-dir", str(root / "out")], REPO / "bench", root / "out/run.log")
 
 
 def main():
@@ -398,7 +418,7 @@ def main():
     elif args.action == "collect":
         collect(cfg)
     elif args.action == "prepare":
-        subprocess.check_call(["bash", str(REPO / "scripts/portable_exec.sh"), str(REPO / "artifacts/bin/shard-worker"), "prepare", "-config", str(run_root(cfg) / "bench.json"), "-server", "sender", "-out-dir", str(run_root(cfg) / "out/prepare")], cwd=str(REPO / "bench"))
+        run_logged(["bash", str(REPO / "scripts/portable_exec.sh"), str(REPO / "artifacts/bin/shard-worker"), "prepare", "-config", str(run_root(cfg) / "bench.json"), "-server", "sender", "-out-dir", str(run_root(cfg) / "out/prepare")], REPO / "bench", run_root(cfg) / "out/prepare.log")
     elif args.action == "run":
         benchmark(cfg)
     elif args.action == "audit":

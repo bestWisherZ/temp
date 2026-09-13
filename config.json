@@ -1,19 +1,20 @@
 {
   "root": "/root/du_sharding",
-  "run_id": "s2-20260914-01",
+  "run_id": "s2-20260914-02",
   "business_shards": 2,
   "intra_consensus_rounds": 5,
   "inter_consensus_rounds": 8,
   "schedule_start_height": 10,
-  "tx_count": 10000,
-  "tx_rate": 500,
-  "connections": 128,
+  "tx_count": 500000,
+  "tx_rate": 5000,
+  "connections": 512,
+  "max_txpool_size": 500000,
   "cross_ratio": 0.05,
   "workload_contract": "standard_dfa_experiment",
-  "confirm_wait_seconds": 300,
+  "confirm_wait_seconds": 900,
   "vm_image": "chainmakerofficial/chainmaker-vm-engine:v2.4.0",
   "vm_cpus": 16,
   "vm_memory": "16g",
   "node_gomaxprocs": 16,
-  "notes": "First validation run, not a saturation throughput result. Server numbers refer to the supplied IP list, not hostnames."
+  "notes": "Two-shard measurement after successful 10000-transaction validation. Server numbers refer to the supplied IP list, not hostnames."
 }
